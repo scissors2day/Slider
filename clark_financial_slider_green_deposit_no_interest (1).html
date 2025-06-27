@@ -1,0 +1,182 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Clark Pediatric Dentistry and Orthodontics Financial Contract</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f8fc;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      padding: 2rem;
+    }
+    .left, .right {
+      background: #ffffff;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      width: 48%;
+    }
+    h2 {
+      color: #004080;
+      margin-top: 0;
+    }
+    label {
+      display: block;
+      margin: 1rem 0 0.5rem;
+    }
+    input[type='text'], input[type='number'], textarea {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 1rem;
+    }
+    .slider-label {
+      margin: 0.5rem 0;
+    }
+    input[type='range'] {
+      width: 100%;
+    }
+    .slider-hint {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      margin-top: -0.5rem;
+      color: #777;
+    }
+    .summary-box {
+      border: 1px solid #ccc;
+      padding: 1rem;
+      margin-top: 1rem;
+      font-size: 1rem;
+      background: #f9f9f9;
+    }
+    .summary-box strong {
+      display: block;
+      margin: 0.5rem 0;
+    }
+    button {
+      margin-top: 1.5rem;
+      background-color: #0074d9;
+      color: white;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="left">
+      <h2>Clark Pediatric Dentistry and Orthodontics</h2>
+      <label>Patient Name:
+        <input type="text" id="patientName" placeholder="e.g. Katie Smith" />
+      </label>
+      <label>Treatment Cost ($):
+        <input type="number" id="treatmentCost" value="6000" />
+      </label>
+      <label>Additional Fees ($):
+        <input type="number" id="additionalFees" value="0" />
+      </label>
+      <label>Insurance Benefit ($):
+        <input type="number" id="insuranceBenefit" value="0" />
+      </label>
+      <label>Max Repayment Months:
+        <input type="number" id="maxMonths" value="18" min="6" max="36" />
+      </label>
+      <label>Notes:
+        <textarea id="notes" placeholder="Optional notes..."></textarea>
+      </label>
+      <div class="slider-label">Down Payment ($): <span id="downPaymentValue">$1000</span></div>
+      
+<div style="position: relative; height: 30px;">
+  <input type="range" id="downPaymentSlider" min="0" max="6000" value="1000"
+         style="position: absolute; top: 0; width: 100%; z-index: 2; background: transparent;" />
+  <div style="position: absolute; top: 12px; height: 6px; width: 100%;
+              background: linear-gradient(to right, #ccc 0%, #ccc 75%, green 75%, green 100%);
+              border-radius: 5px; z-index: 1;"></div>
+</div>
+<div class="slider-label">Repayment Period (Months): <span id="repaymentValue">12 months</span></div>
+      <input type="range" id="repaymentSlider" min="6" max="18" value="12" />
+    </div>
+
+    <div class="right">
+      <h2>Payment Summary</h2>
+      <div class="summary-box" id="summaryBox">
+        <strong>Patient Responsibility:</strong> $0.00<br/>
+        <strong>Down Payment:</strong> $0.00<br/>
+        <strong>Monthly Payment:</strong> $0.00<br/>
+        <strong># of Months:</strong> 0<br/>
+                <strong>Discount:</strong> $0.00
+      </div>
+      <button onclick="window.print()">Start Smile Plan / Export</button>
+    </div>
+  </div>
+
+  <script>
+    const downSlider = document.getElementById('downPaymentSlider');
+    const repaySlider = document.getElementById('repaymentSlider');
+    const downVal = document.getElementById('downPaymentValue');
+    const repayVal = document.getElementById('repaymentValue');
+    const summaryBox = document.getElementById('summaryBox');
+
+    function updatePlan() {
+      const cost = parseFloat(document.getElementById('treatmentCost').value || 0);
+      const fees = parseFloat(document.getElementById('additionalFees').value || 0);
+      const benefit = parseFloat(document.getElementById('insuranceBenefit').value || 0);
+      const maxMonths = parseInt(document.getElementById('maxMonths').value || 18);
+
+      const responsibility = Math.max(0, cost + fees - benefit);
+      downSlider.max = responsibility;
+      repaySlider.max = maxMonths;
+
+      const down = parseFloat(downSlider.value);
+      const months = parseInt(repaySlider.value);
+
+      downVal.textContent = `$${down}`;
+      repayVal.textContent = `${months} months`;
+
+      const pctPaid = responsibility === 0 ? 0 : down / responsibility;
+      let discount = 0;
+      let interestRate = 0;
+
+      if (pctPaid >= 1) {
+        discount = 0.05 * responsibility;
+      } else if (pctPaid >= 0.75) {
+        discount = 0.025 * responsibility;
+      } else if (pctPaid < 0.25) {
+        interestRate = pctPaid >= 0.1 ? 0.05 : 0.10;
+      }
+
+      const netResponsibility = responsibility - discount;
+      const financeAmount = Math.max(0, netResponsibility - down);
+      const interest = financeAmount * interestRate;
+      const totalPayable = financeAmount + interest;
+      const monthly = months > 0 ? totalPayable / months : 0;
+
+      summaryBox.innerHTML = `
+        <strong>Patient Responsibility:</strong> $${responsibility.toFixed(2)}<br/>
+        <strong>Down Payment:</strong> $${down.toFixed(2)}<br/>
+        <strong>Monthly Payment:</strong> $${monthly.toFixed(2)}<br/>
+        <strong># of Months:</strong> ${months}<br/>
+                <strong>Discount:</strong> $${discount.toFixed(2)}
+      `;
+    }
+
+    document.querySelectorAll('input').forEach(el => {
+      el.addEventListener('input', updatePlan);
+    });
+
+    window.onload = updatePlan;
+  </script>
+</body>
+</html>
